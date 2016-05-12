@@ -136,3 +136,7 @@ def fit_lorentz(xs, ys):
     func = lambda p, x: p[0]/((x-p[1])**2+p[2]**2)+5.0
     p0   = [ys.max(), xs[np.argmax(ys)], np.sqrt(ys.var())]
     return fit(func, p0, xs, ys)    
+
+###############################################################
+
+if __name__ == "__main__": run_tests()
