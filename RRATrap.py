@@ -25,12 +25,13 @@ from Pgplot import *
 from scipy.special import erf
 import optparse
 import sys
+import candy  # Alex's candidate experiment 
 #import memory
 CLOSE_DM = 2 # pc cm-3
 FRACTIONAL_SIGMA = 0.9 # change to 0.8?
 MIN_GROUP = 45 #minimum group size that is not considered noise
-TIME_THRESH = 0.1
-DM_THRESH = 0.5 
+TIME_THRESH = 0.006
+DM_THRESH = 0.3 
 MIN_SIGMA = 8
 DEBUG = True # if True, will be verbose
 PLOT = True
@@ -207,7 +208,7 @@ def dbscan(sps, min_nearby=3, time_thresh=TIME_THRESH,
         # Unfortuneately this doesn't work in older versions of scipy
         NNs = kdt.query_ball_point(pts,r=1.42) 
     except:
-        NNs = kdt.query(pts,k=45,distance_upper_bound=1.42)
+        NNs = kdt.query(pts,k=45,distance_upper_bound=1.42)[1]
     discovered = set()
     visiting = []
     groups = []
@@ -219,6 +220,7 @@ def dbscan(sps, min_nearby=3, time_thresh=TIME_THRESH,
         while visiting:
             cur = visiting.pop()
             nns = set(NNs[cur])
+            nns.discard(len(pts))
             if len(nns) > min_nearby:
                 group.append(cur)
                 for n in nns.difference(discovered):
@@ -762,7 +764,15 @@ def main():
 
     # Reverse sort lists so good groups are written at the top of the file
     groups.sort(reverse=True)
-
+    
+    # Alex's candidate experiment
+    candy_out = 'candy_out.npy'
+    print_debug("Running some extra experimental group tests... " + 
+                strftime("%Y-%m-%d %H:%M:%S"))
+    candy.run_tests(groups)
+    print_debug("Finished tests, results written as '" + candy_out +
+                strftime("' %Y-%m-%d %H:%M:%S"))
+        
     # write list of events in each group
     for grp in groups:
         if grp.rank in RANKS_TO_WRITE:
