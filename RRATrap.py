@@ -30,8 +30,8 @@ import candy  # Alex's candidate experiment
 CLOSE_DM = 2 # pc cm-3
 FRACTIONAL_SIGMA = 0.9 # change to 0.8?
 MIN_GROUP = 45 #minimum group size that is not considered noise
-TIME_THRESH = 0.006
-DM_THRESH = 0.3 
+TIME_THRESH = 0.05
+DM_THRESH = 0.5 
 MIN_SIGMA = 8
 DEBUG = True # if True, will be verbose
 PLOT = True
@@ -68,11 +68,21 @@ def old_read_sp_files(sp_files):
     return tmp_sp_params
 
 
-def read_sp_files(sp_files):
-    """Read all *.singlepulse files in the current directory.
+def read_sp_files(sp_files,use_binary=False):
+    """
+    Read all *.singlepulse files in the current directory.
     Return 5 arrays (properties of all single pulses):
     DM, sigma, time, sample, downfact.
+
+    If use_binary, a 'saved_sps.npy' file will be generated
+    for much faster future use since file i/o makes up a 
+    significant fraction of runtime. 
     """
+    if use_binary:
+        try:
+            return np.load('saved_sps.npy').view(np.recarray)
+        except:
+            pass
     finput = fileinput.input(sp_files)
     data = np.loadtxt(finput, 
                       dtype=np.dtype([('dm', 'float32'),
@@ -80,7 +90,10 @@ def read_sp_files(sp_files):
                                       ('time','float32'),
                                       ('sample','uint32'),
                                       ('downfact','uint8')]))
-    return np.atleast_2d(data).view(np.recarray)
+    
+    sps = np.atleast_2d(data).view(np.recarray)
+    if use_binary: np.save('saved_sps',sps)
+    return sps
 
 #class SinglePulseGroup:
 class SinglePulseGroup(object): # Greg's modification
@@ -519,7 +532,7 @@ def plot_sp_rated_all(groups, ranks, ylow=0, yhigh=100, xlow=0, xhigh=120):
         colour corresponding to group rank. 
         The DM range to plot can also be specified.
     """
-    rank_to_color = {2:'r', 0:'k', 3:'g', 4:'b', 5:'m', 6:'c', 7:'y'}
+    rank_to_color = {2:'r', 0:'k', 3:'g', 4:'b', 5:'m', 6:'c', 7:'orangered'}
 
     # Prepare data to plot
     dm = [] 
@@ -602,7 +615,7 @@ def plot_sp_rated_pgplot(groups, ranks, ylow=0, yhigh=100, xlow=0, xhigh=120):
                      4:4, # blue
                      5:6, # magenta
                      6:5, # cyan
-                     7:7} # yellow
+                     7:8} # orange
     
     # Plotting scheme taken from single_pulse_search.py
     # Circles are symbols 20-26 in increasing order
